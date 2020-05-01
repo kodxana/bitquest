@@ -4,14 +4,14 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <!--Compilation config-->
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.bitquest.bitquest</groupId>
-    <artifactId>BitQuest</artifactId>
+    <groupId>com.lbryquest.lbryquest</groupId>
+    <artifactId>lbryquest</artifactId>
     <packaging>jar</packaging>
-    <!--Version of bitQuest-->
+    <!--Version of lbryquest-->
     <version>2.0</version>
     <!--Package information-->
-    <name>BitQuest</name>
-    <url>http://bitquest.co</url>
+    <name>lbryquest</name>
+    <url>http://lbryquest.com</url>
     <!--Other config-->
     <repositories>
         <!--Spigot API-->
@@ -31,14 +31,14 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <finalName>BitQuest</finalName>
+                    <finalName>lbryquest</finalName>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>com.bitquest.bitquest</mainClass>
+                            <mainClass>com.lbryquest.lbryquest</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -99,9 +99,19 @@
         </dependency>
 
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <version>42.2.4</version>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>2.3.0</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/junit/junit -->
@@ -125,6 +135,11 @@
             <version>1.4.9</version>
             <type>jar</type>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.0-801.jdbc4</version>
         </dependency>
     </dependencies>
 </project>

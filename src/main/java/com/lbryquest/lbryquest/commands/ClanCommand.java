@@ -1,0 +1,280 @@
+package com.lbryquest.lbryquest.commands;
+
+import com.lbryquest.lbryquest.LBRYQuest;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+public class ClanCommand extends CommandAction {
+  private LBRYQuest lbryQuest;
+
+  public ClanCommand(LBRYQuest plugin) {
+    lbryQuest = plugin;
+  }
+
+  public boolean run(
+      CommandSender sender, Command cmd, String label, String[] args, Player player) {
+    if (args.length > 0) {
+      String subCommand = args[0];
+      if (subCommand.equals("new")) {
+        if (args.length > 1) {
+          String clanName = args[1];
+          // check that desired clan name is alphanumeric
+          boolean hasNonAlpha = clanName.matches("^.*[^a-zA-Z0-9 ].*$");
+          if (!hasNonAlpha) {
+            // 16 characters max
+            if (clanName.length() <= 16) {
+              if (!LBRYQuest.REDIS.exists("clan:" + player.getUniqueId().toString())) {
+                if (!LBRYQuest.REDIS.sismember("clans", clanName)) {
+                  LBRYQuest.REDIS.sadd("clans", clanName);
+                  LBRYQuest.REDIS.set("clan:" + player.getUniqueId().toString(), clanName);
+                  LBRYQuest.REDIS.sadd(
+                      "clan:" + clanName + ":members", player.getUniqueId().toString());
+                  player.sendMessage(
+                      ChatColor.GREEN
+                          + "Congratulations! you are the founder of the "
+                          + clanName
+                          + " clan");
+                  player.setPlayerListName(
+                      ChatColor.GOLD + "[" + clanName + "] " + ChatColor.WHITE + player.getName());
+                  if (lbryQuest.isModerator(player)) {
+                    player.setPlayerListName(
+                        ChatColor.RED
+                            + "[MOD]"
+                            + ChatColor.GOLD
+                            + "["
+                            + clanName
+                            + "] "
+                            + ChatColor.WHITE
+                            + player.getName());
+                  }
+                  return true;
+                } else {
+                  player.sendMessage(
+                      ChatColor.RED + "A clan with the name '" + clanName + "' already exists.");
+                  return true;
+                }
+              } else {
+                player.sendMessage(
+                    ChatColor.RED
+                        + "You already belong to the clan "
+                        + LBRYQuest.REDIS.get("clan:" + player.getUniqueId().toString()));
+                return true;
+              }
+            } else {
+              player.sendMessage(ChatColor.RED + "Error: clan name must have 16 characters max");
+              return true;
+            }
+          } else {
+            player.sendMessage(
+                ChatColor.RED + "Your clan name must only contain letters and numbers");
+            return true;
+          }
+
+        } else {
+          player.sendMessage(ChatColor.RED + "Usage: /clan new <your desired name>");
+          return true;
+        }
+      }
+      if (subCommand.equals("invite")) {
+        if (args.length > 1) {
+          String invitedName = args[1];
+          if (invitedName.equals(player.getName())) {
+            player.sendMessage(ChatColor.RED + "You can not invite yourself");
+            return true;
+          }
+          // check that player is in a clan
+          if (LBRYQuest.REDIS.exists("clan:" + player.getUniqueId().toString())) {
+            String clan = LBRYQuest.REDIS.get("clan:" + player.getUniqueId().toString());
+            // check if user is in the uuid database
+            if (LBRYQuest.REDIS.exists("uuid:" + invitedName)) {
+              // check if player already belongs to a clan
+              String uuid = LBRYQuest.REDIS.get("uuid:" + invitedName);
+              if (!LBRYQuest.REDIS.exists("clan:" + uuid)) {
+                // check if player is already invited to the clan
+                if (!LBRYQuest.REDIS.sismember("invitations:" + clan, uuid)) {
+                  LBRYQuest.REDIS.sadd("invitations:" + clan, uuid);
+                  player.sendMessage(
+                      ChatColor.GREEN
+                          + "You invited "
+                          + invitedName
+                          + " to the "
+                          + clan
+                          + " clan.");
+                  if (Bukkit.getPlayerExact(invitedName) != null) {
+                    Player invitedplayer = Bukkit.getPlayerExact(invitedName);
+                    invitedplayer.sendMessage(
+                        ChatColor.GREEN
+                            + player.getName()
+                            + " invited you to the "
+                            + clan
+                            + " clan");
+                    invitedplayer.sendMessage(
+                        ChatColor.GREEN + player.getName() + " to join, enter: /clan join " + clan);
+                  }
+                  return true;
+                } else {
+                  player.sendMessage(
+                      ChatColor.RED
+                          + "Player "
+                          + invitedName
+                          + " is already invited to the clan and must accept the invitation");
+                  return true;
+                }
+
+              } else {
+                if (LBRYQuest.REDIS.get("clan:" + uuid).equals(clan)) {
+                  player.sendMessage(
+                      ChatColor.RED
+                          + "Player "
+                          + invitedName
+                          + " already belongs to the clan "
+                          + clan);
+
+                } else {
+                  player.sendMessage(
+                      ChatColor.RED + "Player " + invitedName + " already belongs to a clan.");
+                }
+                return true;
+              }
+            } else {
+              player.sendMessage(
+                  ChatColor.RED + "User " + invitedName + " does not play on this server");
+              return true;
+            }
+          } else {
+            player.sendMessage(ChatColor.RED + "You don't belong to a clan");
+            return true;
+          }
+        } else {
+          player.sendMessage(ChatColor.RED + "Usage: /clan invite <player nickname>");
+          return true;
+        }
+      }
+      if (subCommand.equals("join")) {
+        // check that argument is not empty
+        if (args.length > 1) {
+          String clanName = args[1];
+          // check that player is invited to the clan he wants to join
+          if (LBRYQuest.REDIS.sismember(
+              "invitations:" + clanName, player.getUniqueId().toString())) {
+            // user is invited to join
+            if (!LBRYQuest.REDIS.exists("clan:" + player.getUniqueId().toString())) {
+              // user is not part of any clan
+              LBRYQuest.REDIS.srem("invitations:" + clanName, player.getUniqueId().toString());
+              LBRYQuest.REDIS.set("clan:" + player.getUniqueId().toString(), clanName);
+              LBRYQuest.REDIS.sadd("clan:" + clanName + ":members", player.getUniqueId().toString());
+              player.sendMessage(
+                  ChatColor.GREEN + "You are now part of the " + clanName + " clan!");
+              player.setPlayerListName(
+                  ChatColor.GOLD + "[" + clanName + "] " + ChatColor.WHITE + player.getName());
+              if (lbryQuest.isModerator(player)) {
+                player.setPlayerListName(
+                    ChatColor.RED
+                        + "[MOD]"
+                        + ChatColor.GOLD
+                        + "["
+                        + clanName
+                        + "] "
+                        + ChatColor.WHITE
+                        + player.getName());
+              }
+              return true;
+            } else {
+              player.sendMessage(
+                  ChatColor.RED
+                      + "You already belong to the clan "
+                      + LBRYQuest.REDIS.get("clan:" + player.getUniqueId().toString()));
+              return true;
+            }
+          } else {
+            player.sendMessage(
+                ChatColor.RED + "You are not invited to join the " + clanName + " clan.");
+            return true;
+          }
+        } else {
+          player.sendMessage(ChatColor.RED + "Usage: /clan join <clan name>");
+          return true;
+        }
+      }
+      if (args[0].equals("kick")) {
+        if (args.length > 1) {
+          String toKick = args[1];
+          // check if player is in the uuid database
+          if (LBRYQuest.REDIS.exists("uuid:" + toKick)) {
+            String uuid = LBRYQuest.REDIS.get("uuid:" + toKick);
+            // check if player belongs to a clan
+            if (LBRYQuest.REDIS.exists("clan:" + player.getUniqueId().toString())) {
+              String clan = LBRYQuest.REDIS.get("clan:" + player.getUniqueId().toString());
+              // check that kicker and player are in the same clan
+              if (LBRYQuest.REDIS.get("clan:" + uuid).equals(clan)) {
+                LBRYQuest.REDIS.del("clan:" + uuid);
+                LBRYQuest.REDIS.srem("clan:" + clan + ":members", uuid);
+                removeEmptyClan(clan);
+                player.sendMessage(
+                    ChatColor.GREEN
+                        + "Player "
+                        + toKick
+                        + " was kicked from the "
+                        + clan
+                        + " clan.");
+                if (Bukkit.getPlayerExact(toKick) != null) {
+                  Player invitedPlayer = Bukkit.getPlayerExact(toKick);
+                  invitedPlayer.sendMessage(
+                      ChatColor.RED + player.getName() + " kick you from the " + clan + " clan");
+                  invitedPlayer.setPlayerListName(invitedPlayer.getName());
+                }
+                return true;
+              } else {
+                player.sendMessage(
+                    ChatColor.RED + "Player " + toKick + " is not a member of the clan " + clan);
+                return true;
+              }
+            } else {
+              player.sendMessage(ChatColor.RED + "You don't belong to any clan.");
+              return true;
+            }
+
+          } else {
+            player.sendMessage(
+                ChatColor.RED + "Player " + toKick + " does not play on this server.");
+            return true;
+          }
+        } else {
+          player.sendMessage(ChatColor.RED + "Usage: /clan kick <player nickname>");
+          return true;
+        }
+      }
+      if (subCommand.equals("leave")) {
+        if (LBRYQuest.REDIS.exists("clan:" + player.getUniqueId().toString())) {
+          String clan = LBRYQuest.REDIS.get("clan:" + player.getUniqueId().toString());
+          player.sendMessage(ChatColor.GREEN + "You are no longer part of the " + clan + " clan");
+          LBRYQuest.REDIS.del("clan:" + player.getUniqueId().toString());
+          LBRYQuest.REDIS.srem("clan:" + clan + ":members", player.getUniqueId().toString());
+
+          player.setPlayerListName(player.getName());
+
+          removeEmptyClan(clan);
+          return true;
+        } else {
+          player.sendMessage(ChatColor.RED + "You don't belong to a clan.");
+          return true;
+        }
+      }
+    } else {
+      player.sendMessage(ChatColor.RED + "Usage: /clan <new|invite|kick|join|leave>");
+      return true;
+    }
+    return false;
+  }
+
+  private void removeEmptyClan(String clan) {
+    if (LBRYQuest.REDIS.scard("clan:" + clan + ":members") == 0) {
+      LBRYQuest.REDIS.del("clan:" + clan + ":members");
+      LBRYQuest.REDIS.srem("clans", clan);
+      LBRYQuest.REDIS.del("invitations:" + clan);
+    }
+  }
+}

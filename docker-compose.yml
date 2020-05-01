@@ -1,20 +1,20 @@
 spigot:
-  container_name: bitquest
+  container_name: lbryquest
   build: .
   volumes:
-    - "./target/BitQuest.jar:/spigot/plugins/BitQuest.jar"
+    - "./target/lbryquest.jar:/spigot/plugins/lbryquest.jar"
   ports:
     - "25565:25565"
   environment:
-    - BLOCKCYPHER_CHAIN=btc/test3
-    - DENOMINATION_NAME=TestBits
+    - LBRYQUEST_ENV=production
+      - LBRYQUEST_NODE_USERNAME=lbry
+      - LBRYQUEST_NODE_PASSWORD=lbry
+      - LBRYQUEST_NODE_HOST=127.0.0.1
+      - ADMIN_UUID=5677c824-da7e-3d3d-862a-88db1ea91a61
+      - POSTGRES_PORT_5432_TCP_PORT=5432
+
   links:
     - redis
-    - postgres
 redis:
   image: redis
-postgres:
-  image: postgres
-  environment:
-    - POSTGRES_USER=bitquest
-    - POSTGRES_PASSWORD=ORLY
+

@@ -8,19 +8,19 @@ if [ $(echo `pwd` | grep setup_scripts | wc -l) -ne 0 ]; then
 
 	echo 'Running maven'
 	cd ..
-	bitquest_dir=`pwd`
+	lbryquest_dir=`pwd`
 	mvn package -B
 
 	spigot_file='spigot-1.12.2-R0.1-SNAPSHOT.jar'
 
 	echo 'Downloading $spigot_file'
 
-	# place spigot alongside bitquest
+	# place spigot alongside lbryquest
 	mkdir -p ../spigot
 	cd ../spigot
 	spigot_dir=`pwd`
 	rm $spigot_file 2> /dev/null
-	wget http://jenkins.bitquest.co/job/spigot/lastSuccessfulBuild/artifact/Spigot/Spigot-Server/target/$spigot_file
+	wget https://cdn.getbukkit.org/spigot/spigot-1.13.2.jar
 
 	# automatically agree to the eula so we don't have to run spigot twice during setup
 	echo 'Agreeing to the Mojang EULA'
@@ -29,16 +29,16 @@ if [ $(echo `pwd` | grep setup_scripts | wc -l) -ne 0 ]; then
 	echo 'eula=true' >> eula.txt
 
 	# create the plugins directory
-	echo 'Creating the plugins directory and linking the bitquest plugin'
+	echo 'Creating the plugins directory and linking the lbryquest plugin'
 	mkdir -p plugins
-	rm plugins/bitquest-all.jar 2> /dev/null
-	ln -s $bitquest_dir/build/libs/bitquest-all.jar $spigot_dir/plugins/bitquest-all.jar
+	rm plugins/lbryquest-all.jar 2> /dev/null
+	ln -s $lbryquest_dir/build/libs/lbryquest-all.jar $spigot_dir/plugins/lbryquest-all.jar
 
 	echo 'First time setup is complete'
 
 	echo 'Starting spigot and redis to finish file population and check the environment'
 	java -jar $spigot_file &
-	cd ../bitquest
+	cd ../lbryquest
 	redis-server &
 
 	echo "Done. Don't forget to kill spigot (code 3 on *nix to quit) and redis when you are finished."

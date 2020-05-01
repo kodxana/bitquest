@@ -14,17 +14,17 @@ RUN mkdir -p /spigot/plugins
 WORKDIR /build
 # DOWNLOAD AND BUILD SPIGOT
 ADD https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar /build/BuildTools.jar
-RUN cd /build && java -jar BuildTools.jar --rev latest
+RUN cd /build && java -jar BuildTools.jar --rev 1.13.2
 RUN cp /build/Spigot/Spigot-Server/target/spigot-*.jar /spigot/spigot.jar
 WORKDIR /spigot
 RUN echo "eula=true" > eula.txt
 COPY server.properties /spigot/
 COPY bukkit.yml /spigot/
 COPY spigot.yml /spigot/
-WORKDIR /bitquest
-COPY . /bitquest/
+WORKDIR /lbryquest
+COPY . /lbryquest/
 RUN mvn clean compile assembly:single
-RUN cp /bitquest/target/BitQuest.jar /spigot/plugins/BitQuest.jar
+RUN cp /lbryquest/target/lbryquest.jar /spigot/plugins/lbryquest.jar
 # Add the last version of NoCheatPlus
 # ADD http://ci.md-5.net/job/NoCheatPlus/lastSuccessfulBuild/artifact/target/NoCheatPlus.jar /spigot/plugins/NoCheatPlus.jar
 WORKDIR /spigot
